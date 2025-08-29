@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Application Calculator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            display: flex;
+            min-height: 500px;
+        }
+
+        .left-panel, .right-panel {
+            flex: 1;
+            padding: 30px;
+        }
+
+        .left-panel {
+            border-right: 2px solid #f1f1f1;
+        }
+
+        .panel-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .calculate-btn {
+            display: none;
+        }
+
+        .output-group {
+            margin-bottom: 20px;
+        }
+
+        .output-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .output-field {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f8f9fa;
+            font-size: 16px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .message-box {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: none;
+            white-space: pre-line;
+        }
+
+        .input-group input.late {
+            background-color: #ffebee;
+            border-color: #ef5350;
+            color: #000;
+        }
+
+        .message-box.warning {
+            background: #ffebee;
+            border: 1px solid #ef5350;
+            color: #000;
+        }
+
+        .message-box.info {
+            background: #d1ecf1;
+            border: 1px solid #74c0fc;
+            color: #0c5460;
+        }
+
+        .rules {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .rules h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .rules ul {
+            margin-left: 20px;
+        }
+
+        .rules li {
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .left-panel {
+                border-right: none;
+                border-bottom: 2px solid #f1f1f1;
+            }
+            
+            .container {
+                margin: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .left-panel, .right-panel {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Leave Application Calculator</h1>
+            <p>Tính toán thời gian nghỉ phép cần thiết</p>
+        </div>
+        
+        <div class="content">
+            <div class="left-panel">
+                <div class="panel-title">⏰ Giờ ghi nhận trên hệ thống</div>
+                
+                <div class="input-group">
+                    <label for="checkin">CheckIn:</label>
+                    <input type="time" id="checkin" value="08:00">
+                </div>
+                
+                <div class="input-group">
+                    <label for="checkout">CheckOut:</label>
+                    <input type="time" id="checkout" value="17:00">
+                </div>
+                
+                <div class="message-box" id="messageBox"></div>
+            </div>
+            
+            <div class="right-panel">
+                <div class="panel-title">📝 Leave Application</div>
+                
+                <div class="output-group">
+                    <label for="from">From:</label>
+                    <input type="text" id="from" class="output-field" readonly>
+                </div>
+                
+                <div class="output-group">
+                    <label for="to">To:</label>
+                    <input type="text" id="to" class="output-field" readonly>
+                </div>
+                
+                <div class="rules">
+                    <h3>📋 Quy định:</h3>
+                    <ul>
+                        <li>Giờ làm việc: 08:00 - 17:00 (nghỉ trưa 12:00-13:00)</li>
+                        <li>Thời gian CheckIn sớm nhất: 07:30</li>
+                        <li>Thời gian CheckIn trễ nhất: 09:30</li>
+                        <li>Leave tính theo block 15 phút (0.25h)</li>
+                        <li>Phải làm đủ 8h mỗi ngày</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function timeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function minutesToTime(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+        }
+
+        function roundToQuarter(minutes) {
+            return Math.ceil(minutes / 15) * 15;
+        }
+
+        function calculateLeave() {
+            const checkinInput = document.getElementById('checkin').value;
+            const checkoutInput = document.getElementById('checkout').value;
+            const messageBox = document.getElementById('messageBox');
+            const fromField = document.getElementById('from');
+            const toField = document.getElementById('to');
+            const checkinField = document.getElementById('checkin');
+
+            // Reset
+            messageBox.style.display = 'none';
+            fromField.value = '';
+            toField.value = '';
+            checkinField.classList.remove('late');
+
+            if (!checkinInput || !checkoutInput) {
+                showMessage('Vui lòng nhập đầy đủ thời gian CheckIn và CheckOut', 'warning');
+                return;
+            }
+
+            let checkinMinutes = timeToMinutes(checkinInput);
+            const checkoutMinutes = timeToMinutes(checkoutInput);
+
+            // Constants
+            const earliestCheckin = timeToMinutes('07:30'); // 07:30
+            const latestCheckin = timeToMinutes('09:30'); // 09:30
+            const standardStart = timeToMinutes('08:00'); // 08:00
+            const standardEnd = timeToMinutes('17:00'); // 17:00
+            const lunchStart = timeToMinutes('12:00'); // 12:00
+            const lunchEnd = timeToMinutes('13:00'); // 13:00
+
+            // Adjust checkin if too early
+            if (checkinMinutes < earliestCheckin) {
+                checkinMinutes = earliestCheckin;
+            }
+
+            let actualCheckinMinutes = checkinMinutes; // Keep original checkin time
+            let lateMessage = '';
+
+            // Handle late checkin
+            if (checkinMinutes > latestCheckin) {
+                const lateMinutes = checkinMinutes - latestCheckin;
+                const roundedLateMinutes = roundToQuarter(lateMinutes);
+                const leaveEndMinutes = latestCheckin + roundedLateMinutes;
+                
+                // CheckIn thực tế vẫn là thời gian gốc, không thay đổi
+                lateMessage = `Bạn cần submit form: ${minutesToTime(latestCheckin)} -> ${minutesToTime(leaveEndMinutes)}`;
+                // Don't show message here, will be combined later
+                checkinField.classList.add('late');
+            }
+
+            // Calculate required end time "To"
+            let requiredEndMinutes;
+            if (checkinMinutes > latestCheckin) {
+                // Nếu CheckIn sau 09:30 thì To cố định là 18:30
+                requiredEndMinutes = timeToMinutes('18:30');
+            } else {
+                // Bình thường: CheckIn + 8h + 1h lunch
+                requiredEndMinutes = actualCheckinMinutes + (8 * 60) + 60;
+            }
+
+            // Calculate actual working time with current checkout
+            let actualWorkingMinutes = 0;
+            
+            // Morning session
+            if (actualCheckinMinutes < lunchStart) {
+                const morningEnd = Math.min(checkoutMinutes, lunchStart);
+                actualWorkingMinutes += Math.max(0, morningEnd - actualCheckinMinutes);
+            }
+            
+            // Afternoon session  
+            if (checkoutMinutes > lunchEnd) {
+                const afternoonStart = Math.max(actualCheckinMinutes, lunchEnd);
+                actualWorkingMinutes += Math.max(0, checkoutMinutes - afternoonStart);
+            }
+
+            const requiredWorkMinutes = 8 * 60; // 8 hours
+            const shortfallMinutes = requiredWorkMinutes - actualWorkingMinutes;
+
+            if (shortfallMinutes > 0) {
+                // Need leave application
+                const roundedShortfall = roundToQuarter(shortfallMinutes);
+                
+                // "To" time is calculated above
+                const toMinutes = requiredEndMinutes;
+                
+                // "From" time: lùi từ To về theo từng block 15 phút đến trước CheckOut
+                // Tính số block 15 phút từ CheckOut đến To
+                const minutesFromCheckoutToTo = toMinutes - checkoutMinutes;
+                const blocksFromCheckoutToTo = Math.ceil(minutesFromCheckoutToTo / 15);
+                const fromMinutes = toMinutes - (blocksFromCheckoutToTo * 15);
+
+                fromField.value = minutesToTime(fromMinutes);
+                toField.value = minutesToTime(toMinutes);
+
+                // Create combined message
+                let combinedMessage = '';
+                if (lateMessage) {
+                    combinedMessage = lateMessage;
+                    combinedMessage += `\nBạn cần submit form: ${minutesToTime(fromMinutes)} -> ${minutesToTime(toMinutes)}`;
+                    showMessage(combinedMessage, 'warning');
+                } else {
+                    showMessage(`Bạn thiếu ${roundedShortfall} phút (${(roundedShortfall/60).toFixed(2)} giờ). Cần submit leave để bù đủ 8h làm việc.\nBạn cần submit form: ${minutesToTime(fromMinutes)} -> ${minutesToTime(toMinutes)}`, 'info');
+                }
+            } else {
+                // Still show late message if exists, even if no afternoon leave needed
+                if (lateMessage) {
+                    showMessage(lateMessage, 'warning');
+                } else {
+                    showMessage('Bạn đã làm đủ 8h, không cần submit leave!', 'info');
+                }
+            }
+        }
+
+        function showMessage(message, type) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = message;
+            messageBox.className = `message-box ${type}`;
+            messageBox.style.display = 'block';
+        }
+
+        // Add event listeners for real-time calculation
+        document.getElementById('checkin').addEventListener('change', calculateLeave);
+        document.getElementById('checkout').addEventListener('change', calculateLeave);
+        
+        // Calculate on page load
+        document.addEventListener('DOMContentLoaded', calculateLeave);
+    </script>
+</body>
+</html>
