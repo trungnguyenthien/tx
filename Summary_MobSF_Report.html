@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Report Summarizer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            padding: 20px;
+        }
+        .columns {
+            display: flex;
+            gap: 20px;
+            height: 600px;
+        }
+        .column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .column h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 18px;
+        }
+        textarea {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 12px;
+            resize: none;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            border-color: #667eea;
+        }
+        .button-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Security Report Summarizer</h1>
+            <p>Convert MobSF security scan results to structured summary format</p>
+        </div>
+        
+        <div class="content">
+            <div class="columns">
+                <div class="column">
+                    <h3>Original JSON Report</h3>
+                    <textarea id="originalJson" placeholder="Paste your MobSF report JSON here...">{
+  "errors": [],
+  "mobsfscan_version": "0.4.5",
+  "results": {
+    "android_certificate_pinning": {
+      "metadata": {
+        "cwe": "CWE-295: Improper Certificate Validation",
+        "description": "This app does not use a TLS/SSL certificate or public key pinning in code to detect or prevent MITM attacks in secure communication channel. Please verify if pinning is enabled in `network_security_config.xml`.",
+        "masvs": "MSTG-NETWORK-4",
+        "owasp-mobile": "M3: Insecure Communication",
+        "reference": "https://github.com/MobSF/owasp-mstg/blob/master/Document/0x05g-Testing-Network-Communication.md#testing-custom-certificate-stores-and-certificate-pinning-mstg-network-4",
+        "severity": "INFO"
+      }
+    },
+    "android_kotlin_hardcoded": {
+      "files": [
+        {
+          "file_path": "/src/src/main/kotlin/com/techx/flowxphoneagent/services/ApkDownloadService.kt",
+          "match_lines": [49, 50],
+          "match_position": [1875, 1903],
+          "match_string": "key = \"update_info_key\"\n    "
+        }
+      ],
+      "metadata": {
+        "cwe": "CWE-798: Use of Hard-coded Credentials",
+        "description": "Files may contain hardcoded sensitive information like usernames, passwords, keys etc.",
+        "masvs": "MSTG-STORAGE-14",
+        "owasp-mobile": "M9: Reverse Engineering",
+        "reference": "https://github.com/MobSF/owasp-mstg/blob/master/Document/0x05d-Testing-Data-Storage.md#storing-a-key---example",
+        "severity": "WARNING"
+      }
+    }
+  }
+}</textarea>
+                </div>
+                
+                <div class="column">
+                    <h3>Summary JSON Array</h3>
+                    <textarea id="summaryJson" placeholder="Click 'Generate Summary' to see results..." readonly></textarea>
+                </div>
+            </div>
+            
+            <div class="button-container">
+                <button onclick="generateSummary()">Generate Summary</button>
+            </div>
+            
+            <div id="status"></div>
+        </div>
+    </div>
+
+    <script>
+        function summarizeSecurityReport(reportJson) {
+            try {
+                const report = typeof reportJson === 'string' ? JSON.parse(reportJson) : reportJson;
+                const summary = [];
+                
+                if (!report.results) {
+                    throw new Error('Invalid report format: missing results property');
+                }
+                
+                Object.entries(report.results).forEach(([issueKey, issue]) => {
+                    if (!issue.metadata) {
+                        return; // Skip if no metadata
+                    }
+                    
+                    const summaryItem = {
+                        issueKey: issueKey,
+                        description: issue.metadata.description || '',
+                        severity: issue.metadata.severity || 'UNKNOWN',
+                        masvs: issue.metadata.masvs || '',
+                        "owasp-mobile": issue.metadata["owasp-mobile"] || '',
+                        files: []
+                    };
+                    
+                    // Process files if they exist
+                    if (issue.files && Array.isArray(issue.files)) {
+                        issue.files.forEach(file => {
+                            if (file.file_path && file.match_lines && Array.isArray(file.match_lines)) {
+                                file.match_lines.forEach(lineNum => {
+                                    summaryItem.files.push(`${file.file_path}#L${lineNum}`);
+                                });
+                            } else if (file.file_path) {
+                                // If no specific line numbers, just add the file path
+                                summaryItem.files.push(file.file_path);
+                            }
+                        });
+                    }
+                    
+                    // Remove duplicates from files array
+                    summaryItem.files = [...new Set(summaryItem.files)];
+                    
+                    summary.push(summaryItem);
+                });
+                
+                return summary;
+                
+            } catch (error) {
+                throw new Error(`Error processing report: ${error.message}`);
+            }
+        }
+        
+        function generateSummary() {
+            const originalTextarea = document.getElementById('originalJson');
+            const summaryTextarea = document.getElementById('summaryJson');
+            const statusDiv = document.getElementById('status');
+            
+            try {
+                const originalJson = originalTextarea.value.trim();
+                
+                if (!originalJson) {
+                    throw new Error('Please paste your JSON report in the left textarea');
+                }
+                
+                const summary = summarizeSecurityReport(originalJson);
+                summaryTextarea.value = JSON.stringify(summary, null, 2);
+                
+                statusDiv.innerHTML = `<div class="status success">Successfully generated summary with ${summary.length} security issues</div>`;
+                
+            } catch (error) {
+                summaryTextarea.value = '';
+                statusDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Load sample data on page load
+        window.addEventListener('load', function() {
+            // Sample data is already loaded in the textarea
+        });
+    </script>
+</body>
+</html>

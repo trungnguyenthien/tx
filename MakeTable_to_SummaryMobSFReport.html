@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON to HTML Table Generator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #444;
+            font-size: 1.1em;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .button-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result-section {
+            margin-top: 30px;
+        }
+
+        .output-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .output-table th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 14px;
+        }
+
+        .output-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: top;
+        }
+
+        .output-table tr:hover {
+            background-color: #f8f9ff;
+            transition: background-color 0.2s ease;
+        }
+
+        .output-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .severity {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .severity.error {
+            background-color: #ffe6e6;
+            color: #d63031;
+            border: 1px solid #fab1a0;
+        }
+
+        .severity.warning {
+            background-color: #fff3e0;
+            color: #e17055;
+            border: 1px solid #fdcb6e;
+        }
+
+        .severity.info {
+            background-color: #e3f2fd;
+            color: #0984e3;
+            border: 1px solid #74b9ff;
+        }
+
+        pre {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .error-message {
+            background: #ffe6e6;
+            color: #d63031;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #d63031;
+        }
+
+        .description-cell {
+            max-width: 300px;
+            word-wrap: break-word;
+        }
+
+        .detail-cell {
+            max-width: 250px;
+            word-wrap: break-word;
+            font-size: 13px;
+        }
+
+        .files-cell {
+            max-width: 400px;
+        }
+
+        @media (max-width: 768px) {
+            .output-table {
+                font-size: 12px;
+            }
+            
+            .output-table th,
+            .output-table td {
+                padding: 10px 8px;
+            }
+            
+            .description-cell,
+            .detail-cell,
+            .files-cell {
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>JSON to HTML Table Generator</h1>
+        
+        <div class="input-section">
+            <label for="jsonInput">Nhập dữ liệu JSON:</label>
+            <textarea id="jsonInput" placeholder="Paste your JSON data here...">[
+  {
+    "issueKey": "android_kotlin_hardcoded",
+    "description": "Files may contain hardcoded sensitive information like usernames, passwords, keys etc.",
+    "severity": "WARNING",
+    "masvs": "MSTG-STORAGE-14",
+    "owasp-mobile": "M9: Reverse Engineering",
+    "files": [
+      "/src/src/main/kotlin/com/techx/flowxphoneagent/services/ApkDownloadService.kt#L49",
+      "/src/src/main/kotlin/com/techx/flowxphoneagent/services/ApkDownloadService.kt#L50",
+      "/src/src/main/kotlin/com/techx/flowxphoneagent/services/Recorder.kt#L189",
+      "/src/src/main/kotlin/com/techx/flowxphoneagent/services/Recorder.kt#L191",
+      "/src/src/main/kotlin/com/techx/flowxphoneagent/shell/AdbKey.kt#L268",
+      "/src/src/main/kotlin/com/techx/flowxphoneagent/shell/AdbKey.kt#L270",
+      "/src/src/main/kotlin/com/techx/flowxphoneagent/shell/AdbPairingService.kt#L42",
+      "/src/src/main/kotlin/com/techx/flowxphoneagent/shell/AdbPairingService.kt#L44",
+      "/src/src/main/kotlin/com/techx/flowxphoneagent/shell/AdbPairingService.kt#L41"
+    ]
+  }
+]</textarea>
+        </div>
+
+        <div class="button-container">
+            <button onclick="generateTable()">Generate HTML Table</button>
+        </div>
+
+        <div class="result-section">
+            <div id="errorContainer"></div>
+            <div id="tableContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        function generateTable() {
+            const jsonInput = document.getElementById('jsonInput').value.trim();
+            const errorContainer = document.getElementById('errorContainer');
+            const tableContainer = document.getElementById('tableContainer');
+            
+            // Clear previous results
+            errorContainer.innerHTML = '';
+            tableContainer.innerHTML = '';
+            
+            if (!jsonInput) {
+                showError('Vui lòng nhập dữ liệu JSON.');
+                return;
+            }
+            
+            try {
+                const data = JSON.parse(jsonInput);
+                
+                if (!Array.isArray(data)) {
+                    showError('Dữ liệu JSON phải là một mảng.');
+                    return;
+                }
+                
+                if (data.length === 0) {
+                    showError('Mảng JSON không có dữ liệu.');
+                    return;
+                }
+                
+                // Sort data by severity: ERROR, WARNING, INFO
+                const severityOrder = { 'ERROR': 1, 'WARNING': 2, 'INFO': 3 };
+                const sortedData = data.sort((a, b) => {
+                    const orderA = severityOrder[a.severity?.toUpperCase()] || 999;
+                    const orderB = severityOrder[b.severity?.toUpperCase()] || 999;
+                    return orderA - orderB;
+                });
+                
+                const table = createTable(sortedData);
+                tableContainer.appendChild(table);
+                
+            } catch (error) {
+                showError('Lỗi phân tích JSON: ' + error.message);
+            }
+        }
+        
+        function createTable(data) {
+            const table = document.createElement('table');
+            table.className = 'output-table';
+            
+            // Create header
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            
+            const headers = ['Description', 'Severity', 'Detail', 'Files'];
+            headers.forEach(headerText => {
+                const th = document.createElement('th');
+                th.textContent = headerText;
+                headerRow.appendChild(th);
+            });
+            
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // Create body
+            const tbody = document.createElement('tbody');
+            
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                
+                // Description column
+                const descCell = document.createElement('td');
+                descCell.className = 'description-cell';
+                descCell.textContent = item.description || '';
+                row.appendChild(descCell);
+                
+                // Severity column
+                const severityCell = document.createElement('td');
+                const severitySpan = document.createElement('span');
+                severitySpan.className = `severity ${(item.severity || '').toLowerCase()}`;
+                severitySpan.textContent = item.severity || '';
+                severityCell.appendChild(severitySpan);
+                row.appendChild(severityCell);
+                
+                // Detail column (merge masvs and owasp-mobile)
+                const detailCell = document.createElement('td');
+                detailCell.className = 'detail-cell';
+                const masvs = item.masvs || '';
+                const owaspMobile = item['owasp-mobile'] || '';
+                detailCell.textContent = `MASVS: ${masvs}, OWASP Mobile: ${owaspMobile}`;
+                row.appendChild(detailCell);
+                
+                // Files column
+                const filesCell = document.createElement('td');
+                filesCell.className = 'files-cell';
+                if (item.files && Array.isArray(item.files) && item.files.length > 0) {
+                    const pre = document.createElement('pre');
+                    pre.textContent = item.files.join('\n');
+                    filesCell.appendChild(pre);
+                } else {
+                    filesCell.textContent = 'No files';
+                }
+                row.appendChild(filesCell);
+                
+                tbody.appendChild(row);
+            });
+            
+            table.appendChild(tbody);
+            return table;
+        }
+        
+        function showError(message) {
+            const errorContainer = document.getElementById('errorContainer');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            errorContainer.appendChild(errorDiv);
+        }
+        
+        // Generate table on page load with default data
+        window.onload = function() {
+            generateTable();
+        };
+    </script>
+</body>
+</html>
