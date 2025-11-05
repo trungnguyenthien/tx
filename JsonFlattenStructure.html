@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Flatten Tool</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            padding: 20px;
+            background-color: #b3b3b3;
+            display: flex;
+            flex-direction: column;
+        }
+        .tool-container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            margin-bottom: 20px;
+        }
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+        .row.textarea-row {
+            flex: 1;
+            min-height: 0;
+        }
+        .textarea-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        textarea {
+            flex: 1;
+            resize: none;
+            font-family: monospace;
+            font-size: 10px;
+            background-color: #fffacd;
+        }
+        .error-message {
+            color: #dc3545;
+            font-size: 14px;
+            min-height: 20px;
+        }
+        .gap-2 {
+            gap: 0.5rem;
+        }
+        h1 {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: calc(100% - 250px);
+        }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="mb-0">JSON Flatten Tool</h1>
+            <div class="d-flex gap-2">
+                <button class="btn btn-success px-5 py-2" onclick="executeFunction()">Execute</button>
+                <button class="btn btn-primary px-5 py-2" onclick="copyOutput()">Copy</button>
+            </div>
+        </div>
+        <div id="errorMessage" class="error-message"></div>
+        
+        <div class="content-wrapper">
+            <div class="row textarea-row">
+                <div class="col-md-6">
+                    <div class="textarea-container">
+                        <textarea id="inputArea" class="form-control" placeholder="Input (JSON)"></textarea>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="textarea-container">
+                        <textarea id="outputArea" class="form-control" placeholder="Output (Flattened JSON)" readonly></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getValueType(value) {
+            if (value === null) return 'null';
+            if (Array.isArray(value)) {
+                if (value.length === 0) return 'array-empty';
+                const firstType = typeof value[0];
+                if (firstType === 'number') {
+                    return Number.isInteger(value[0]) ? 'array-int' : 'array-float';
+                }
+                if (firstType === 'string') return 'array-string';
+                if (firstType === 'boolean') return 'array-boolean';
+                return 'array-empty';
+            }
+            if (typeof value === 'number') {
+                return Number.isInteger(value) ? 'int' : 'float';
+            }
+            if (typeof value === 'string') return 'string';
+            if (typeof value === 'boolean') return 'boolean';
+            if (typeof value === 'object') return 'object';
+            return 'unknown';
+        }
+
+        function getMockValue(type) {
+            switch (type) {
+                case 'int': return 999;
+                case 'float': return 999.999;
+                case 'string': return 'string';
+                case 'boolean': return false;
+                case 'null': return null;
+                case 'array-empty': return [];
+                case 'array-string': return ['string'];
+                case 'array-int': return [999];
+                case 'array-float': return [999.999];
+                case 'array-boolean': return [false];
+                case 'object': return null;
+                default: return null;
+            }
+        }
+
+        function flattenJSON(obj, prefix = '') {
+            const result = {};
+            
+            for (const key in obj) {
+                if (!obj.hasOwnProperty(key)) continue;
+                
+                const value = obj[key];
+                const newKey = prefix ? `${prefix}.${key}` : key;
+                const valueType = getValueType(value);
+                
+                if (valueType === 'object' && value !== null) {
+                    const nested = flattenJSON(value, newKey);
+                    Object.assign(result, nested);
+                } else if (Array.isArray(value)) {
+                    if (value.length === 0) {
+                        result[newKey] = [];
+                    } else if (typeof value[0] === 'object' && value[0] !== null) {
+                        // Array of objects - flatten the first object
+                        const nested = flattenJSON(value[0], `${newKey}[]`);
+                        Object.assign(result, nested);
+                    } else {
+                        // Array of primitives
+                        result[`${newKey}[]`] = getMockValue(valueType);
+                    }
+                } else {
+                    result[newKey] = getMockValue(valueType);
+                }
+            }
+            
+            return result;
+        }
+
+        function executeFunction() {
+            const inputArea = document.getElementById('inputArea');
+            const outputArea = document.getElementById('outputArea');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            errorMessage.textContent = '';
+            
+            try {
+                const inputText = inputArea.value.trim();
+                if (!inputText) {
+                    errorMessage.textContent = 'Please enter JSON data';
+                    outputArea.value = '';
+                    return;
+                }
+                
+                const jsonData = JSON.parse(inputText);
+                const flattened = flattenJSON(jsonData);
+                outputArea.value = JSON.stringify(flattened, null, 2);
+                
+            } catch (error) {
+                errorMessage.textContent = 'Invalid JSON: ' + error.message;
+                outputArea.value = '';
+            }
+        }
+
+        function copyOutput() {
+            const outputArea = document.getElementById('outputArea');
+            if (!outputArea.value) {
+                alert('No output to copy');
+                return;
+            }
+            
+            outputArea.select();
+            outputArea.setSelectionRange(0, 99999);
+            
+            navigator.clipboard.writeText(outputArea.value).then(() => {
+                const btn = document.querySelector('.btn-primary');
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 1500);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy to clipboard');
+            });
+        }
+    </script>
+</body>
+</html>
