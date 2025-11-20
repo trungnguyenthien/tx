@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tìm đường Google Maps</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <div class="flex items-center gap-3">
+                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+                </svg>
+                <h1 class="text-3xl font-bold text-gray-800">Tìm đường trên Google Maps</h1>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Bên trái - Input -->
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Nhập tọa độ
+                </h2>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Format: Tên điểm: latitude, longitude
+                    </label>
+                    <textarea
+                        id="inputText"
+                        class="w-full h-80 p-4 border-2 border-gray-300 rounded-lg font-mono text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
+                        placeholder="jolio: 10.818713193648264, 106.77683677553945
+Cầu nhơn trạch: 10.76929254254299, 106.83694020132509
+Khu dân cư DTA: 10.670652930836534, 106.9254664788057
+Bãi sau Vũng Tàu: 10.345520086046193, 107.09655509919556"></textarea>
+                </div>
+
+                <div id="errorMessage" class="mb-4 p-3 bg-red-50 border-l-4 border-red-500 rounded-r hidden">
+                    <p class="text-sm text-red-700"></p>
+                </div>
+
+                <button
+                    id="createRouteBtn"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+                    </svg>
+                    Tạo tuyến đường
+                </button>
+
+                <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+                    <p class="text-xs text-gray-600">
+                        💡 <strong>Hướng dẫn:</strong> Mỗi dòng là một điểm dừng. 
+                        Dùng dấu ":" để phân tách tên và tọa độ. 
+                        Tọa độ gồm latitude, longitude cách nhau bởi dấu phẩy.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Bên phải - Kết quả -->
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+                    </svg>
+                    Kết quả tuyến đường
+                </h2>
+
+                <div id="emptyState" class="flex items-center justify-center h-80 text-gray-400">
+                    <div class="text-center">
+                        <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <p>Nhập tọa độ và nhấn "Tạo tuyến đường"</p>
+                    </div>
+                </div>
+
+                <div id="resultContent" class="hidden">
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg mb-6">
+                        <p class="text-sm text-gray-700">
+                            <strong>Số điểm dừng:</strong> <span id="pointCount">0</span> điểm
+                        </p>
+                    </div>
+
+                    <div id="locationList" class="space-y-3 mb-6 max-h-80 overflow-y-auto">
+                        <!-- Locations will be inserted here -->
+                    </div>
+
+                    <a
+                        id="openMapsBtn"
+                        href="#"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="flex items-center justify-center gap-3 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors shadow-lg hover:shadow-xl mb-4"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                        </svg>
+                        Mở trên Google Maps
+                    </a>
+
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-600 mb-2 font-semibold">Link chia sẻ:</p>
+                        <input
+                            id="shareLink"
+                            type="text"
+                            readonly
+                            class="w-full p-2 text-xs bg-white border border-gray-300 rounded font-mono cursor-pointer hover:bg-gray-50"
+                            onclick="this.select()"
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let locations = [];
+
+        function parseLocations(text) {
+            try {
+                const lines = text.trim().split('\n').filter(line => line.trim());
+                const parsed = lines.map((line, index) => {
+                    const parts = line.split(':');
+                    if (parts.length < 2) {
+                        throw new Error(`Dòng ${index + 1}: Thiếu dấu ":"`);
+                    }
+                    
+                    const name = parts[0].trim();
+                    const coords = parts[1].trim().split(',');
+                    
+                    if (coords.length !== 2) {
+                        throw new Error(`Dòng ${index + 1}: Cần có 2 tọa độ (lat, lng)`);
+                    }
+                    
+                    const lat = parseFloat(coords[0].trim());
+                    const lng = parseFloat(coords[1].trim());
+                    
+                    if (isNaN(lat) || isNaN(lng)) {
+                        throw new Error(`Dòng ${index + 1}: Tọa độ không hợp lệ`);
+                    }
+                    
+                    return { name, lat, lng };
+                });
+                
+                locations = parsed;
+                hideError();
+                renderResults();
+            } catch (e) {
+                showError(e.message);
+                locations = [];
+                showEmptyState();
+            }
+        }
+
+        function createGoogleMapsUrl() {
+            if (locations.length === 0) return '';
+            const waypoints = locations.map(loc => `${loc.lat},${loc.lng}`).join('/');
+            return `https://www.google.com/maps/dir/${waypoints}`;
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.querySelector('p').textContent = '❌ ' + message;
+            errorEl.classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+
+        function showEmptyState() {
+            document.getElementById('emptyState').classList.remove('hidden');
+            document.getElementById('resultContent').classList.add('hidden');
+        }
+
+        function renderResults() {
+            if (locations.length === 0) {
+                showEmptyState();
+                return;
+            }
+
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('resultContent').classList.remove('hidden');
+            
+            document.getElementById('pointCount').textContent = locations.length;
+            
+            const locationList = document.getElementById('locationList');
+            locationList.innerHTML = locations.map((loc, index) => `
+                <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                            ${index + 1}
+                        </div>
+                    </div>
+                    <div class="flex-grow min-w-0">
+                        <h3 class="font-semibold text-gray-800 truncate">${loc.name}</h3>
+                        <p class="text-xs text-gray-600 font-mono">
+                            ${loc.lat.toFixed(6)}, ${loc.lng.toFixed(6)}
+                        </p>
+                    </div>
+                </div>
+            `).join('');
+
+            const mapsUrl = createGoogleMapsUrl();
+            document.getElementById('openMapsBtn').href = mapsUrl;
+            document.getElementById('shareLink').value = mapsUrl;
+        }
+
+        // Event listeners
+        document.getElementById('createRouteBtn').addEventListener('click', () => {
+            const text = document.getElementById('inputText').value;
+            parseLocations(text);
+        });
+
+        // Don't auto parse on load since textarea is now empty
+    </script>
+</body>
+</html>
